@@ -1,0 +1,11 @@
+#libevent pkg-config source file
+
+libdir=@LIB_INSTALL_DIR@
+includedir=@INCLUDE_INSTALL_DIR@
+
+Name: @PROJECT_NAME@
+Description: bencode parser/generator in C++17
+Version: @LIB_VERSION_STRING@
+Libs: -L${libdir} -lliblua
+URL: https://github.com/hominsu/lua
+Cflags: -I${includedir}
