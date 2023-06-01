@@ -19,10 +19,15 @@ set(LIB_PATCH_VERSION "6")
 set(LIB_VERSION_STRING "${LIB_MAJOR_VERSION}.${LIB_MINOR_VERSION}.${LIB_PATCH_VERSION}")
 
 if (CMAKE_VERSION VERSION_LESS 3.0)
-    PROJECT(lua C)
+    PROJECT(lua C CXX)
 else ()
     cmake_policy(SET CMP0048 NEW)
-    PROJECT(lua VERSION "${LIB_VERSION_STRING}" LANGUAGES C)
+    PROJECT(lua VERSION "${LIB_VERSION_STRING}" LANGUAGES C CXX)
+endif ()
+
+# compile in release with debug info mode by default
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif ()
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -48,7 +53,12 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
         endif ()
     endif ()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fno-stack-protector -fno-common")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wfatal-errors -Wextra")
+    set(EXTRA_C_FLAGS
+            -Wshadow -Wundef -Wwrite-strings -Wredundant-decls -Wdisabled-optimization -Wdouble-promotion -Wmissing-declarations
+            -Wdeclaration-after-statement -Wmissing-prototypes -Wnested-externs -Wstrict-prototypes -Wc++-compat -Wold-style-definition
+            -Wlogical-op -Wno-aggressive-loop-optimizations
+            -Wall -O2 -fno-stack-protector -fno-common)
 elseif (CMAKE_C_COMPILER_ID MATCHES "Clang")
     if (LUA_ENABLE_INSTRUMENTATION_OPT AND NOT CMAKE_CROSSCOMPILING)
         if (CMAKE_SYSTEM_PROCESSOR STREQUAL "powerpc" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "ppc" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "ppc64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "ppc64le")
@@ -57,7 +67,11 @@ elseif (CMAKE_C_COMPILER_ID MATCHES "Clang")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
         endif ()
     endif ()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fno-stack-protector -fno-common")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wfatal-errors -Wextra")
+    set(EXTRA_C_FLAGS
+            -Wshadow -Wundef -Wwrite-strings -Wredundant-decls -Wdisabled-optimization -Wdouble-promotion -Wmissing-declarations
+            -Wdeclaration-after-statement -Wmissing-prototypes -Wnested-externs -Wstrict-prototypes -Wc++-compat -Wold-style-definition
+            -Wall -O2 -fno-stack-protector -fno-common)
 endif ()
 
 # core: used by all
@@ -113,6 +127,7 @@ add_library(lua_include INTERFACE)
 target_include_directories(lua_include INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
         $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
+
 add_library(lua_lib STATIC ${CORE_SRCS} ${AUX_SRCS} ${LIB_SRCS})
 target_link_libraries(lua_lib PUBLIC lua_include)
 if (UNIX)
@@ -125,10 +140,11 @@ if (UNIX)
     target_link_libraries(lua_lib PUBLIC dl)
 endif ()
 set_target_properties(lua_lib PROPERTIES
+        COMPILE_OPTIONS ${EXTRA_C_FLAGS}
         VERSION "${PACKAGE_VERSION}"
         OUTPUT_NAME lua)
 
-add_library(Lua::Library ALIAS lua_lib)
+add_library(Lua::Lua ALIAS lua_lib)
 
 add_executable(lua ${LUA_SRCS})
 target_link_libraries(lua PUBLIC lua_include PRIVATE lua_lib)
@@ -138,6 +154,8 @@ if (HAVE_READLINE)
     target_compile_definitions(lua PRIVATE LUA_USE_READLINE)
     target_link_libraries(lua PUBLIC readline)
 endif ()
+set_target_properties(lua PROPERTIES
+        COMPILE_OPTIONS ${EXTRA_C_FLAGS})
 
 #add extra search paths for libraries and includes
 SET(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "The directory the headers are installed in")
@@ -175,10 +193,10 @@ install(EXPORT LuaTargets
 
 string(TOUPPER ${PROJECT_NAME} _PROJECT_NAME)
 
+get_target_property(LUA_EXPORT_LIBRARY Lua::Lua ALIASED_TARGET)
+set(${_PROJECT_NAME}_INCLUDE_DIR "\${${_PROJECT_NAME}_SOURCE_DIR}/include")
 set(CONFIG_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(CONFIG_DIR ${CMAKE_CURRENT_BINARY_DIR})
-set(${_PROJECT_NAME}_INCLUDE_DIR "\${${_PROJECT_NAME}_SOURCE_DIR}/include")
-get_target_property(LUA_EXPORT_LIBRARY Lua::Library ALIASED_TARGET)
 configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}Config.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"

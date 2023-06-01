@@ -9,7 +9,7 @@ set_and_check( LUA_INCLUDE_DIR  "@LUA_INCLUDE_DIR@" )
 set_and_check( LUA_INCLUDE_DIRS  "@LUA_INCLUDE_DIR@" )
 message(STATUS "bencode found. Headers: ${LUA_INCLUDE_DIRS}")
 
-add_library(Lua::Library ALIAS "Lua::@LUA_EXPORT_LIBRARY@")
-set(LUA_LIBRARIES "Lua::Library")
+add_library(Lua::Lua ALIAS "Lua::@LUA_EXPORT_LIBRARY@")
+set(LUA_LIBRARIES "Lua::Lua")
 
 check_required_components(Lua)
