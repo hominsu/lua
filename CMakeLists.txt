@@ -162,8 +162,9 @@ set_target_properties(lua PROPERTIES
         COMPILE_OPTIONS ${EXTRA_C_FLAGS})
 
 #add extra search paths for libraries and includes
-SET(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "The directory the headers are installed in")
+SET(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "Directory where headers will install")
 SET(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE STRING "Directory where lib will install")
+SET(BIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE STRING "Directory where executable will install")
 
 # cmake
 if (UNIX OR CYGWIN)
@@ -184,7 +185,7 @@ if (UNIX OR CYGWIN)
             COMPONENT pkgconfig)
 endif ()
 
-install(TARGETS lua_include lua_lib
+install(TARGETS lua_include lua_lib lua
         EXPORT LuaTargets)
 
 install(DIRECTORY include/${PROJECT_NAME}
