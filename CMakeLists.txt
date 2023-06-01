@@ -131,13 +131,17 @@ target_include_directories(lua_include INTERFACE
 add_library(lua_lib STATIC ${CORE_SRCS} ${AUX_SRCS} ${LIB_SRCS})
 target_link_libraries(lua_lib PUBLIC lua_include)
 if (UNIX)
+    find_library(LIBM m)
+    if (NOT LIBM)
+        message(FATAL_ERROR "libm not found and is required by lua")
+    endif ()
     if (APPLE)
         set(_LUA_PLATFORM LUA_USE_MACOSX)
     else ()
         set(_LUA_PLATFORM LUA_USE_LINUX)
     endif ()
     target_compile_definitions(lua_lib INTERFACE ${_LUA_PLATFORM})
-    target_link_libraries(lua_lib PUBLIC dl)
+    target_link_libraries(lua_lib PUBLIC m dl)
 endif ()
 set_target_properties(lua_lib PROPERTIES
         COMPILE_OPTIONS ${EXTRA_C_FLAGS}
